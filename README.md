@@ -75,6 +75,28 @@ The provided usernames are checked on over 145 websites within few seconds.
 
     http://127.0.0.1:8000/username_json , json=json_parameters
 
+
+## Returned JSON
+    {'uname(никнейм)':
+        [
+            {   'Ресурс': "3dnews",
+                'Страна': "RU",
+                'Url': "http://forum.3dnews.ru/",
+                'Ссылка_на_профиль': "http://forum.3dnews.ru/member.php?username=alex",
+                'Статус': "найден!",
+                'Статус_http': 200,
+                'Общее_замедление/сек': "нет",
+                'Отклик/сек': "0,53",
+                'Общее_время/сек': "0,61",
+                'Сессия/Kb': "42",
+            },
+            {
+                ....
+            },
+            ....
+        ]
+    ....
+    }
 ## Required search parameters:
     uname - (str) nickname to search | example: alex or nickolas%michel%SAM
 
