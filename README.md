@@ -10,11 +10,12 @@ The provided usernames are checked on over 145 websites within few seconds.
     * Return Json response with find Usernames and information about URLs
 
 ## Installation
+    Note: Required python version is 3.7+
 ### Clone repository
     git clone https://github.com/AlekseiSychev/api_snoop.git
 
 ### Enter working directory
-    $ cd ~/api_snoop
+    $ cd ~/api_search
 
 ### Install python3 or python3-pip, if they are not installed
     $ apt-get update && apt-get install python3 python3-pip
