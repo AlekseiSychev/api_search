@@ -102,13 +102,13 @@ The provided usernames are checked on over 145 websites within few seconds.
 
 ## Optional search parameters:
 
-  'listing' and 'sorty' parameters are only used together:
+    'listing' and 'sorty' parameters are only used together:
         listing - (bool) output to the console of the sorted database
         sorty - (str) by site countries — "1", by site name — "2", all — "3"
 
     verbose - (bool) detailed verbalization (network and site testing with console output)
 
-  'site_list', 'exclude_country', 'one_level', 'country' use only one parameter:
+    'site_list', 'exclude_country', 'one_level', 'country' use only one parameter:
         site_list - (str) list of sites from the database to search | example: 3dnews%4gameforum%AG%Akniga
         exclude_country - (str) list of excluded countries in the search | example - us%ru%wr%kb%eu%tr%de
         one_level - (str) list of countries to search | example: us%ru%wr%kb%eu%tr%de
