@@ -5,6 +5,7 @@
 import base64
 import json
 import locale
+from operator import truediv
 
 import networktest
 import shutil
@@ -244,11 +245,15 @@ def sscreen_chrome(url: str, path: str, website_name: str, index: int, width=192
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--no-sandbox")
     options.add_experimental_option('excludeSwitches', ['enable-logging'])
-    # options.binary_location = CHROMIUM_PATH ## путь к бинарному файлу хромиум
-
-    
-    s = Service(executable_path=CHROME_WEBDRIVER_PATH) ## путь к веб-драйверу
-    browser = webdriver.Chrome(options=options, service=s)
+    try:
+        # options.binary_location = CHROMIUM_PATH ## путь к бинарному файлу хромиум
+        s = Service(executable_path=CHROME_WEBDRIVER_PATH) ## путь к веб-драйверу
+        browser = webdriver.Chrome(options=options, service=s)
+    except Exception as ex:
+        # print(ex)
+        sys.exit('Установите chrome/chromium и chromedriver. Измените переменные CHROMIUM_PATH и CHROME_WEBDRIVER_PATH. Расскоментируйте строку options.binary_location = CHROMIUM_PATH')
+        
+        
     browser.set_window_size(width, height)
     
     screen_base64 = "error"
