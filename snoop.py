@@ -5,7 +5,6 @@
 import base64
 import json
 import locale
-from operator import truediv
 
 import networktest
 import shutil
