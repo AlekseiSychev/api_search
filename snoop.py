@@ -1,10 +1,11 @@
-# cd C:\Users\User\projects\snoop
+# cd C:\Users\User\work\api_search; env\Scripts\activate; uvicorn api:app --reload;
 # env\Scripts\activate
 # uvicorn api:app --reload
 
 import base64
 import json
 import locale
+
 import networktest
 import shutil
 import glob
@@ -16,9 +17,13 @@ import requests
 import sys
 import time
 
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+
 from collections import Counter
 from colorama import Fore, Style, init
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from requests_futures.sessions import FuturesSession
 from rich.progress import BarColumn, SpinnerColumn, TimeElapsedColumn, Progress
 from rich.panel import Panel
@@ -86,6 +91,9 @@ dirhome = os.environ['HOME'] + "/snoop" if sys.platform != 'win32' else os.envir
 dirpath = dirresults if 'source' in version else dirhome
 os.makedirs(f"{dirpath}/results", exist_ok=True)
 os.makedirs(f"{dirpath}/results/nicknames/save reports", exist_ok=True)
+
+CHROMIUM_PATH = f"{dirpath}/chrome/chrome.exe" # путь к бинарному файлу хромиум
+CHROME_WEBDRIVER_PATH = f"{dirpath}/chrome/chromedriver.exe" # путь к веб-драйверу хром
 
 ################################################################################
 
@@ -199,7 +207,121 @@ def sreports(url, headers, session2, error_type, username, websites_names, r):
         with open(f"{dirpath}/results/nicknames/save reports/{username}/{websites_names}.html", 'w', encoding=r.encoding) as rep:
             rep.write(r.text)
 
+def sscreen_chrome(url: str, path: str, website_name: str, index: int, width=1920, height=1080):
+    """Настройка браузера и создание скриншота в формате png/base64
 
+    Args:
+        url (str): URL сайта для перехода методом get
+        path (str): Путь сохранения скриншота в формате png
+        website_name (str): Название вебсайта на который переходим
+        index (int): Индекс словоря для дальнейшего преобразования
+        width (int): Ширина скриншота
+        height (int): Высота скриншота
+
+    Returns:
+        index (int): индекс словоря для дальнейшего присвоения ему строки 'screenshot': base64(str)
+        screen_base64 (str): закодированния изображение в формате base64 
+    """
+    
+    ## Создание User-Agent
+    majR = random.choice(range(73, 94, 1))
+    minR = random.choice(range(2683, 4606, 13))
+    patR = random.choice(range(52, 99, 1))
+    RandHead=[f"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) " + \
+                f"Chrome/{majR}.0.{minR}.{patR} Safari/537.36",
+                f"Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
+                f"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{majR}.0.{minR}.{patR} Safari/537.36"]
+    user_agent = random.choice(RandHead)
+    
+    ## Настройки для браузера Chrome
+    options = webdriver.ChromeOptions()
+    options.add_argument("--headless")
+    options.add_argument("--hide-scrollbars")
+    options.add_argument(f"--user-agent={user_agent}")
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    options.add_argument("--disable-extensions")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--no-sandbox")
+    options.add_experimental_option('excludeSwitches', ['enable-logging'])
+    # options.binary_location = CHROMIUM_PATH ## путь к бинарному файлу хромиум
+
+    
+    s = Service(executable_path=CHROME_WEBDRIVER_PATH) ## путь к веб-драйверу
+    browser = webdriver.Chrome(options=options, service=s)
+    browser.set_window_size(width, height)
+    
+    screen_base64 = "error"
+    
+    try:
+        browser.get(url)
+        browser.save_screenshot(f"{path}/{website_name}.png")
+        screen_base64 = browser.get_screenshot_as_base64()
+    except Exception as ex:
+        pass
+        # print(ex)
+    finally:
+        browser.quit()
+    
+    if screen_base64 != "error":
+        msg = Fore.GREEN + f"{url} - сохранено"
+    else:
+        msg = Fore.RED + f"{url} - ошибка сохранения"
+        
+    return index, screen_base64, msg
+    
+def sscreenshot(username: str, info_urls_list: list, BDdemo_new, norm: bool, width: int, height: int):
+    """Подготовка задач для многопоточного исполнения функции sscreen_chrome
+
+    Args:
+        username (str): Никнейм пользователя
+        info_urls_list (list): Список словарей с данными сайтов
+        BDdemo_new (_type_): База данных для выбора кол-ва потоков
+        norm (bool): Параметр для выбора кол-ва потоков
+        width (int): Ширина скриншота. Defaults to 1920
+        height (int): Высота скриншота. Defaults to 1080
+
+    Returns:
+        info_urls_list (list): Измененный список словарей с добавленной строкой 'screenshot': base64(str)
+    """
+    
+    date_screen = time.strftime('%d.%m.%Y', time_date)
+    time_screen = time.strftime('%Hh %Mm %Ss', time_date)
+    
+    os.makedirs(f"{dirpath}/results/screenshots/{username}/{date_screen}/{time_screen}/", exist_ok=True)
+    path = f"{dirpath}/results/screenshots/{username}/{date_screen}/{time_screen}"
+    
+    if sys.platform != 'win32':
+        if Android:
+            tread__ = len(BDdemo_new) if len(BDdemo_new) < 10 else 10
+        else:  #linux
+            if norm is False:
+                tread__ = len(BDdemo_new) if len(BDdemo_new) < 16 else 16 
+    else:  #windows
+        tread__ = len(BDdemo_new) if len(BDdemo_new) < 14 else 14
+    
+    count_error = 0
+    
+    with ThreadPoolExecutor(max_workers=tread__) as executor:
+        print(Fore.CYAN + f'Кол-во профилей для сохранения скриншота - {len(info_urls_list)}')
+        futures = []
+        for info_url_dict in info_urls_list:
+            url = info_url_dict.get('Ссылка_на_профиль')
+            website_name = info_url_dict.get('Ресурс')
+            index = info_urls_list.index(info_url_dict)
+            futures.append(executor.submit(sscreen_chrome, url, path, website_name, index, width, height))
+        for future in as_completed(futures):
+            index, screen_base64, msg = future.result()
+            info_urls_list[index]["Screenshot"] = screen_base64 # запись в словарь скриншота в формате base64
+            print(msg)
+            if screen_base64 == "error":
+                count_error += 1
+    
+    
+    print(Fore.CYAN + f'Кол-во сохраненных скриншотов - {len(info_urls_list) - count_error} \n')
+    
+    return info_urls_list # измененный список со словарями
+    
 ## Основная функция.
 def snoop(username, BDdemo_new, verbose=False, country=False, norm=False, reports=False, print_found_only=False, timeout=None, color=True, cert=False, quickly=False, headerS=None):
 
@@ -283,7 +405,7 @@ def snoop(username, BDdemo_new, verbose=False, country=False, norm=False, report
                 session1 = ElapsedFuturesSession(executor=ProcessPoolExecutor(max_workers=proc_), session=my_session)
             else:
                 tread_ = len(BDdemo_new) if len(BDdemo_new) < 16 else 16
-                session1 = ElapsedFuturesSession(executor=ThreadPoolExecutor(max_workers=tread_), session=my_session)
+                session1 = ElapsedFuturesSession(executor=ThreadPoolExecutor(max_workers=tread_), session=my_session)   
     else:  #windows
         tread__ = len(BDdemo_new) if len(BDdemo_new) < 14 else 14
         session1 = ElapsedFuturesSession(executor=ThreadPoolExecutor(max_workers=tread__), session=my_session)
@@ -292,8 +414,8 @@ def snoop(username, BDdemo_new, verbose=False, country=False, norm=False, report
         session2 = FuturesSession(max_workers=1, session=my_session)
     if norm is False:
         session3 = ElapsedFuturesSession(executor=ThreadPoolExecutor(max_workers=1), session=my_session)
-
-
+        
+        
 ## Результаты анализа всех сайтов.
     dic_snoop_full = {}
 ## Создание futures на все запросы. Это позволит распараллелить запросы с прерываниями.
@@ -611,10 +733,10 @@ def autoclean():
         print(f"\033[31;1mdeleted --> {rm}\033[0m\033[36m {len(delfiles)} files, {round(total_size/1024/1024, 2)} Mb\033[0m")
     except Exception:
         console.log("[red]Ошибка")
-    sys.exit('Вirectory clean. Директория с результатами очищена')
+    sys.exit('Directory clean. Директория с результатами очищена')
 
 ## ОСНОВА.
-def run(*, args_username, args_listing=False, sortY=None, args_verbose=False, args_site_list=None, args_exclude_country=None, args_one_level=None, args_country=False, args_timeout=5, args_print_found_only=True, args_no_func=True, args_reports=False, args_autoclean=False, args_cert=False, args_headerS=None, args_norm=False, args_quickly=True, args_db=None):
+def run(*, args_username, args_listing=False, sortY=None, args_verbose=False, args_site_list=None, args_exclude_country=None, args_one_level=None, args_country=False, args_timeout=5, args_print_found_only=True, args_no_func=True, args_reports=False, args_autoclean=False, args_cert=False, args_headerS=None, args_norm=False, args_quickly=True, args_db=None, args_screenshot=False, screen_width=1920, screen_height=1080):
     '''Параметры передаваемые в функцию run:
     args_listing - вывод в консоль отсортированной базы данных по умолчанию False | доп параметр переменная sortY = '' , по странам сайта — "1", по названию сайта — "2", all — "3"
     args_username - список(list) передаваемых имен для поиска
@@ -639,6 +761,9 @@ def run(*, args_username, args_listing=False, sortY=None, args_verbose=False, ar
         По_умолчанию (в Windows) вкл 'нормальный режим'. В demo version переключатель режимов деактивирован, по умолчанию False
     args_quickly - тихий режим поиска. Промежуточные результаты не выводятся на печать. Повторные гибкие соединения на сбойных ресурсах без замедления ПО. Самый прогрессивный режим поиска (в разработке - не использовать)
     args_db - str название базы данных(зашифрованной) | по умолчанию None
+    args_screenshot - сохранение скриншотов локально в формате png и добавление в общий json строкой base64 | по умолчанию False
+    screen_width - ширина скриншота в пикселях | по умолчанию 1920
+    screen_height - высота скриншота в пикселях | по умолчанию 1080
     '''
 
 ## Опции  '-cseo' несовместимы между собой.
@@ -680,6 +805,10 @@ def run(*, args_username, args_listing=False, sortY=None, args_verbose=False, ar
     if args_no_func:
         print(Fore.CYAN + "[+] активирована опция '-n': «отключены:: цвета; звук; флаги; браузер; прогресс»")
 
+## Опция '-Ss'.
+    if args_screenshot:
+        print(Fore.CYAN + "[+] активирована опция '-Ss': «сохранение скриншотов профилей в формате png/base64»")
+
 ## Опция  '-t'.
 
     if args_timeout:
@@ -687,9 +816,6 @@ def run(*, args_username, args_listing=False, sortY=None, args_verbose=False, ar
         if args_timeout > 0:
             print(Fore.CYAN + f"[+] активирована опция '-t': «snoop будет ожидать ответа от " + \
                 f"сайта \033[36;1m {args_timeout}_sec\033[0m\033[36m» \033[0m")
-    elif args_timeout is None:
-        args_timeout = 5
-        print(Fore.CYAN + f"[+] timeout установлен по умолчанию: {args_timeout} сек")
 
 
 ## Опция '-f'.
@@ -911,36 +1037,40 @@ def run(*, args_username, args_listing=False, sortY=None, args_verbose=False, ar
                     Ssession = "Bad"
 
                 if dictionary.get('exists') == 'найден!':
-                    url_info_dict = {'Ресурс': site, 
-                                     'Страна': dictionary.get('countryCSV'), 
-                                     'Url': dictionary.get('url_main'), 
-                                     'Ссылка_на_профиль': dictionary.get('url_user'), 
-                                     'Статус': dictionary.get('exists'),
-                                     'Статус_http': dictionary.get('http_status'), 
-                                     'Общее_замедление/сек': dictionary.get('response_time_site_ms').replace('.', locale.localeconv()['decimal_point']), 
-                                     'Отклик/сек': dictionary.get('check_time_ms').replace('.', locale.localeconv()['decimal_point']), 
-                                     'Общее_время/сек': dictionary.get('response_time_ms').replace('.', locale.localeconv()['decimal_point']), 
-                                     'Сессия/Kb': Ssession, 
-                                     }
-                    
-                    info_urls_list.append(url_info_dict) # добавляем в список со словарями найденную информацией по сайтам
+                    if dictionary.get('http_status') == 200:
+                        url_info_dict = {'Ресурс': site, 
+                                        'Страна': dictionary.get('countryCSV'), 
+                                        'Url': dictionary.get('url_main'), 
+                                        'Ссылка_на_профиль': dictionary.get('url_user'), 
+                                        'Статус': dictionary.get('exists'),
+                                        'Статус_http': dictionary.get('http_status'), 
+                                        'Общее_замедление/сек': dictionary.get('response_time_site_ms').replace('.', locale.localeconv()['decimal_point']), 
+                                        'Отклик/сек': dictionary.get('check_time_ms').replace('.', locale.localeconv()['decimal_point']), 
+                                        'Общее_время/сек': dictionary.get('response_time_ms').replace('.', locale.localeconv()['decimal_point']), 
+                                        'Сессия/Kb': Ssession, 
+                                        }
+                                        
+                        info_urls_list.append(url_info_dict) # добавляем в список со словарями найденную информацией по сайтам
                         
+            ## Скриншот профиля на веб странице в формате png/base64          
+            if args_screenshot:
+                info_urls_list = sscreenshot(username, info_urls_list, BDdemo_new, norm=args_norm, width=screen_width, height=screen_height)
+            
             dict_json = {username: info_urls_list}
             JSON.update(dict_json)
             
             # Размер сессии персональный и общий, кроме CSV.     
             try:
-                sess_size = round(sum(ungzip) / 1024, 2)  #в МБ
                 s_size_all = round(sum(ungzip_all) / 1024, 2)  #в МБ
             except Exception:
-                sess_size = 0.000_000_000_1
                 s_size_all = "Err"
                 
             censors_cor = int((censors - recensor) / kef_user)  #err_connection
             censors_timeout_cor = int(censors_timeout / kef_user)  #err time-out
             flagBS_err = round((censors_cor + censors_timeout_cor) * 100 / flagBS, 3)
             time_all_search = str(round(time.time() - time_start_search))
-
+            
+            
 ## Финишный вывод.
             if bool(FULL) is True:
                 if Android:

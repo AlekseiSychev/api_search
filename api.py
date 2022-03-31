@@ -21,7 +21,7 @@ class Item(BaseModel):
     one_level: Optional[str] = None # строка(str) разделенная знаком '%' пример: us%ru%wr%kb%eu%tr%de | список стран по которым ведется поиск, по умолчанию None
     country: Optional[bool] = False # сортировка сайтов по странам(EU, RU и тд) перед поиском, по умолчанию False
 
-    timeout: Optional[int] = None # время ожидания ответа от сервера во время поиска, по умолчанию None(5 сек). Влияет на (продолжительность поиска,'Timeout ошибки') Вкл. эту опцию необходимо при медленном интернет соединении, чтобы избежать длительных зависаний
+    timeout: Optional[int] = 5 # время ожидания ответа от сервера во время поиска, по умолчанию (5 сек). Влияет на (продолжительность поиска,'Timeout ошибки') Вкл. эту опцию необходимо при медленном интернет соединении, чтобы избежать длительных зависаний
     print_found_only: Optional[bool] = True # отображение в консоли только найденных сайтов, по умолчанию True
     no_func: Optional[bool] = False # отключает цвета; звук; флаги; браузер; прогресс, по умолчанию True. Экономит ресурсы системы и ускоряет поиск
 
@@ -36,10 +36,14 @@ class Item(BaseModel):
         # По_умолчанию (в Windows) вкл 'нормальный режим'. В demo version переключатель режимов деактивирован, по умолчанию False
     quickly: Optional[bool] = True # тихий режим поиска. Промежуточные результаты не выводятся на печать. Повторные гибкие соединения на сбойных ресурсах без замедления ПО. Самый прогрессивный режим поиска (в разработке - не использовать)
     db: Optional[str] = None # str название базы данных(зашифрованной) пример: BDdemo_en | по умолчанию None
-
+    
+    ## Параметры сриншота
+    screenshot: Optional[bool] = False # сохранение скриншотов локально в формате png и добавление в общий json строкой base64 | по умолчанию False
+    screen_width: Optional[int] = 1920 # ширина скриншота в пикселях | по умолчанию 1920
+    screen_height: Optional[int] = 1080 # высота скриншота в пикселях | по умолчанию 1080
 
 @app.get('/username/{uname}')
-async def username(uname: str, listing: bool = False, sorty: str = None, verbose: bool = False, site_list: str = None, exclude_country: str = None, one_level: str = None, country: bool = False, timeout: int = None, print_found_only: bool = True, no_func: bool = False, reports: bool = False, autoclean: bool = False, cert: bool = False, headers: str = None, norm: bool = False, quickly: bool = True, db: str = None):
+def username(uname: str, listing: bool = False, sorty: str = None, verbose: bool = False, site_list: str = None, exclude_country: str = None, one_level: str = None, country: bool = False, timeout: int = 5, print_found_only: bool = True, no_func: bool = False, reports: bool = False, autoclean: bool = False, cert: bool = False, headers: str = None, norm: bool = False, quickly: bool = True, db: str = None, screenshot: bool = False, screen_width: int = 1920, screen_height: int = 1080):
     '''
     GET запрос для запуска программы поиска. Возвращает JSON : \n
 
@@ -89,13 +93,16 @@ async def username(uname: str, listing: bool = False, sorty: str = None, verbose
         norm=false/true
         quickly=true/false
         db=BDdemo_en
+        screenshot=false/true
+        screen_width=1920
+        screen_height=1080
     '''
 
     if '%' in uname:
         ulist = uname.split('%')
         if len(ulist) > 1:
             try:
-                search_username = run(args_username=ulist, args_listing=listing, sortY=sorty, args_verbose=verbose, args_site_list=site_list, args_exclude_country=exclude_country, args_one_level=one_level, args_country=country, args_timeout=timeout, args_print_found_only=print_found_only, args_no_func=no_func, args_reports=reports, args_autoclean=autoclean, args_cert=cert, args_headerS=headers, args_norm=norm, args_quickly=quickly, args_db=db)
+                search_username = run(args_username=ulist, args_listing=listing, sortY=sorty, args_verbose=verbose, args_site_list=site_list, args_exclude_country=exclude_country, args_one_level=one_level, args_country=country, args_timeout=timeout, args_print_found_only=print_found_only, args_no_func=no_func, args_reports=reports, args_autoclean=autoclean, args_cert=cert, args_headerS=headers, args_norm=norm, args_quickly=quickly, args_db=db, args_screenshot=screenshot, screen_width=screen_width, screen_height=screen_height)
                 return search_username
             except SystemExit as ex:
                 raise HTTPException(status_code=400, detail=f'{ex}')
@@ -104,14 +111,14 @@ async def username(uname: str, listing: bool = False, sorty: str = None, verbose
     else:
         uname = [uname]
         try:
-            search_username = run(args_username=uname, args_listing=listing, sortY=sorty, args_verbose=verbose, args_site_list=site_list, args_exclude_country=exclude_country, args_one_level=one_level, args_country=country, args_timeout=timeout, args_print_found_only=print_found_only, args_no_func=no_func, args_reports=reports, args_autoclean=autoclean, args_cert=cert, args_headerS=headers, args_norm=norm, args_quickly=quickly, args_db=db)
+            search_username = run(args_username=uname, args_listing=listing, sortY=sorty, args_verbose=verbose, args_site_list=site_list, args_exclude_country=exclude_country, args_one_level=one_level, args_country=country, args_timeout=timeout, args_print_found_only=print_found_only, args_no_func=no_func, args_reports=reports, args_autoclean=autoclean, args_cert=cert, args_headerS=headers, args_norm=norm, args_quickly=quickly, args_db=db, args_screenshot=screenshot, screen_width=screen_width, screen_height=screen_height)
             return search_username
         except SystemExit as ex:
-                raise HTTPException(status_code=400, detail=f'{ex}')
+            raise HTTPException(status_code=400, detail=f'{ex}')
 
 
 @app.post('/username_json/')
-async def username_json(item: Item):
+def username_json(item: Item):
     '''
     POST запрос для запуска программы поиска. Возвращает JSON : \n
 
@@ -151,6 +158,9 @@ async def username_json(item: Item):
             "cert": True,
             "norm": False,
             "quickly": True,
+            "screenshot": true
+            "screen_width": 800
+            "screen_height": 600
         }
     '''
 
@@ -158,7 +168,7 @@ async def username_json(item: Item):
         ulist = item.uname.split('%')
         if len(ulist) > 1:
             try:
-                search_username = run(args_username=ulist, args_listing=item.listing, sortY=item.sorty, args_verbose=item.verbose, args_site_list=item.site_list, args_exclude_country=item.exclude_country, args_one_level=item.one_level, args_country=item.country, args_timeout=item.timeout, args_print_found_only=item.print_found_only, args_no_func=item.no_func, args_reports=item.reports, args_autoclean=item.autoclean,args_cert=item.cert, args_headerS=item.headers, args_norm=item.norm, args_quickly=item.quickly, args_db=item.db)
+                search_username = run(args_username=ulist, args_listing=item.listing, sortY=item.sorty, args_verbose=item.verbose, args_site_list=item.site_list, args_exclude_country=item.exclude_country, args_one_level=item.one_level, args_country=item.country, args_timeout=item.timeout, args_print_found_only=item.print_found_only, args_no_func=item.no_func, args_reports=item.reports, args_autoclean=item.autoclean,args_cert=item.cert, args_headerS=item.headers, args_norm=item.norm, args_quickly=item.quickly, args_db=item.db, args_screenshot=item.screenshot, screen_width=item.screen_width, screen_height=item.screen_height)
                 return search_username
             except SystemExit as ex:
                 raise HTTPException(status_code=400, detail=f'{ex}')
@@ -167,7 +177,7 @@ async def username_json(item: Item):
     else:
         uname = [item.uname]
         try:
-            search_username = run(args_username=uname, args_listing=item.listing, sortY=item.sorty, args_verbose=item.verbose, args_site_list=item.site_list, args_exclude_country=item.exclude_country, args_one_level=item.one_level, args_country=item.country, args_timeout=item.timeout, args_print_found_only=item.print_found_only, args_no_func=item.no_func, args_reports=item.reports, args_autoclean=item.autoclean,args_cert=item.cert, args_headerS=item.headers, args_norm=item.norm, args_quickly=item.quickly, args_db=item.db)
+            search_username = run(args_username=uname, args_listing=item.listing, sortY=item.sorty, args_verbose=item.verbose, args_site_list=item.site_list, args_exclude_country=item.exclude_country, args_one_level=item.one_level, args_country=item.country, args_timeout=item.timeout, args_print_found_only=item.print_found_only, args_no_func=item.no_func, args_reports=item.reports, args_autoclean=item.autoclean,args_cert=item.cert, args_headerS=item.headers, args_norm=item.norm, args_quickly=item.quickly, args_db=item.db, args_screenshot=item.screenshot, screen_width=item.screen_width, screen_height=item.screen_height)
             return search_username
         except SystemExit as ex:
-                raise HTTPException(status_code=400, detail=f'{ex}')
+            raise HTTPException(status_code=400, detail=f'{ex}')

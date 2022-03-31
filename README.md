@@ -24,61 +24,80 @@ The provided usernames are checked on over 145 websites within few seconds.
     $ pip install --upgrade pip
     $ python3 -m pip install -r requirements.txt
 
+### To create a screenshot of the found profile, you need:
+  * Download and Install Chrome
+    >https://www.google.com/intl/ru_ru/chrome/
+  * Or Download and install Chromium
+    > https://commondatastorage.googleapis.com/chromium-browser-snapshots/index.html
+    - locate files into ~/api_search/chrome
+    - change variable: CHROMIUM_PATH
+    - uncomment string: options.binary_location = CHROMIUM_PATH 
+  * Check version chrome/chromium and dowload webdriver
+    > https://chromedriver.chromium.org/downloads
+    - locate files into ~/api_search/chrome
+    - change variable: CHROME_WEBDRIVER_PATH
+
 ## Usage
     Run server on command line: uvicorn api:app --reload
     Open browser and follow http://127.0.0.1:8000/docs where you can test requests 
 
 ### GET request:
 
-  #### Single username
-    http://127.0.0.1:8000/username/Alex
+  * Single username
+    > http://127.0.0.1:8000/username/Alex
 
-  #### Several usernames separated *%* 
-    http://127.0.0.1:8000/username/Mike%anny%joseph
+  * Several usernames separated "%"
+    > http://127.0.0.1:8000/username/Mike%anny%joseph
 
 ### POST request:
 
-  #### Single username
-    json_parameters = 
-                    {
-                        "uname": "alex",
-                        "listing": True,
-                        "verbose": True,
-                        "site_list": "3dnews%4gameforum%AG%Akniga",
-                        "timeout": 10,
-                        "print_found_only": True,
-                        "no_func": True,
-                        "reports": False,
-                        "autoclean": False,
-                        "cert": True,
-                        "norm": False,
-                        "quickly": True,
-                    }
+  * Single username
+
+        json_parameters = {
+            "uname": "alex",
+            "listing": True,
+            "verbose": True,
+            "site_list": "3dnews%4gameforum%AG%Akniga",
+            "timeout": 10,
+            "print_found_only": True,
+            "no_func": True,
+            "reports": False,
+            "autoclean": False,
+            "cert": True,
+            "norm": False,
+            "quickly": True,
+            "screenshot": True,
+            "screen_width": 800,
+            "screen_height": 600,
+            }
 
     http://127.0.0.1:8000/username_json , json=json_parameters
 
-  #### Several usernames separated *%*
-    json_parameters = 
-                    {
-                        "uname": "Mike%anny%joseph",
-                        "listing": True,
-                        "verbose": True,
-                        "site_list": "3dnews%4gameforum%AG%Akniga",
-                        "timeout": 10,
-                        "print_found_only": True,
-                        "no_func": True,
-                        "reports": False,
-                        "autoclean": False,
-                        "cert": True,
-                        "norm": False,
-                        "quickly": True,
-                    }
+  * Several usernames separated *%*
+
+        json_parameters = {
+            "uname": "Mike%anny%joseph",
+            "listing": True,
+            "verbose": True,
+            "site_list": "3dnews%4gameforum%AG%Akniga",
+            "timeout": 10,
+            "print_found_only": True,
+            "no_func": True,
+            "reports": False,
+            "autoclean": False,
+            "cert": True,
+            "norm": False,
+            "quickly": True,
+            "screenshot": True,
+            "screen_width": 800,
+            "screen_height": 600,
+        }
 
     http://127.0.0.1:8000/username_json , json=json_parameters
 
 
 ## Returned JSON
-    {'uname(никнейм)':
+    {'uname':
         [
             {   'Ресурс': "3dnews",
                 'Страна': "RU",
@@ -126,3 +145,8 @@ The provided usernames are checked on over 145 websites within few seconds.
     headers - (str) using custom User-Agents headers | example: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36 RuxitSynthetic/1.0 v8614745334095228442 t8093092299234304605 ath2653ab72 altpriv cvcv=2 smf=0
     quickly - (bool) repetitive flexible connections on failed resources without software slowdown
     db - (str) name of used database
+
+    screenshot parameters:
+        screenshot - (bool) saving screenshot locally in png format and adding to common json with base64 string
+        screen_width - (int) width in pixels | default 1920
+        screen_height - (int) height in pixels | default 1080
